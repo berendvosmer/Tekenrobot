@@ -115,6 +115,10 @@ const PROGMEM int pen_up = 150;
 const PROGMEM int pen_down = 10;
 
 float pivot_point = 0; //right is positive
+boolean moves_complete = true;
+boolean previous_moves_complete = true;
+
+byte complete_message[1] = {0x01};
 
 AF_Stepper motor1(steps_per_rev, 1);
 AF_Stepper motor2(steps_per_rev, 2);
@@ -304,12 +308,7 @@ void checkDigitalInputs(void)
   if (TOTAL_PORTS > 15 && reportPINs[15]) outputPort(15, readPort(15, portConfigInputs[15]), false);
 }
 
-void runSpeedToPosition() {
-  while (!(leftstepper.distanceToGo() == 0) || !(rightstepper.distanceToGo() == 0)) {
-    multi_stepper.runSpeedToPosition();
-  }
-  
-}
+
 void penUp() {
   analogWriteCallback(SERVO_PIN, pen_up);
   delay(500);
@@ -330,9 +329,9 @@ void right(uint8_t degrees) {
   long target[2]; 
   target[0] = leftstepper.currentPosition() + steps_left;
   target[1] = rightstepper.currentPosition() + steps_right;
-  
+
+  moves_complete = false;
   multi_stepper.moveTo(target);
-  runSpeedToPosition();
 }
 
 void left(uint8_t degrees) {
@@ -345,9 +344,9 @@ void left(uint8_t degrees) {
   long target[2]; 
   target[0] = leftstepper.currentPosition() + steps_left;
   target[1] = rightstepper.currentPosition() + steps_right;
-  
+
+  moves_complete = false;
   multi_stepper.moveTo(target);
-  runSpeedToPosition();
 }
 
 void forward(uint16_t millimeters) {
@@ -356,9 +355,9 @@ void forward(uint16_t millimeters) {
   target[0] = leftstepper.currentPosition() + steps;
   target[1] = rightstepper.currentPosition() + steps;
   
+  moves_complete = false;
   multi_stepper.moveTo(target);
 
-  runSpeedToPosition();
 }
 
 void backward(uint16_t millimeters) {
@@ -368,8 +367,8 @@ void backward(uint16_t millimeters) {
   target[0] = leftstepper.currentPosition() - steps;
   target[1] = rightstepper.currentPosition() - steps;
   
+  moves_complete = false;
   multi_stepper.moveTo(target);
-  runSpeedToPosition();
 
 }
 
@@ -1037,6 +1036,15 @@ void loop()
    * FTDI buffer using Serial.print()  */
   checkDigitalInputs();
 
+  
+  // Check if the steppers have reached their end positions and send Sysex 0x01 back to client
+  moves_complete = !multi_stepper.run();
+  
+  if (moves_complete && !previous_moves_complete) {
+    previous_moves_complete = true;
+    Firmata.sendSysex((byte)ROBOT_CMD, (byte)0x01, complete_message);
+  }
+  
   /* STREAMREAD - processing incoming messagse as soon as possible, while still
    * checking digital inputs.  */
   while (Firmata.available())
