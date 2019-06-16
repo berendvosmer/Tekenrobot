@@ -1038,8 +1038,9 @@ void loop()
 
   
   // Check if the steppers have reached their end positions and send Sysex 0x01 back to client
+  previous_moves_complete = moves_complete;
   moves_complete = !multi_stepper.run();
-  
+
   if (moves_complete && !previous_moves_complete) {
     previous_moves_complete = true;
     Firmata.sendSysex((byte)ROBOT_CMD, (byte)0x01, complete_message);
