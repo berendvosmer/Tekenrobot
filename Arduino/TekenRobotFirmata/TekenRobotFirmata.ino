@@ -106,10 +106,10 @@ byte servoCount = 0;
 boolean isResetting = false;
 
 const PROGMEM float pen_offset = 56.75; //right is positive
-const PROGMEM float wheel_diameter = 42.436;
+const PROGMEM float wheel_diameter = 42.436;//42.436 with 3.5mm o-ring, 40.436 with 2.5mm 0-ring
 const PROGMEM float half_track_width = 40.05;//39.89;39.875
 
-const PROGMEM float steps_per_rev = 4096;
+const PROGMEM float steps_per_rev = 2048;
 const PROGMEM float steps_per_mil = steps_per_rev / (wheel_diameter * PI);
 const PROGMEM int pen_up = 150;
 const PROGMEM int pen_down = 10;
@@ -140,8 +140,8 @@ void backwardstep2() {
 }
 
 // Motor shield has two motor ports, now we'll wrap them in an AccelStepper object
-AccelStepper leftstepper(forwardstep1, backwardstep1);
-AccelStepper rightstepper(forwardstep2, backwardstep2);
+AccelStepper rightstepper(forwardstep1, backwardstep1);
+AccelStepper leftstepper(forwardstep2, backwardstep2);
 
 // Forward declare a few functions to avoid compiler errors with older versions
 // of the Arduino IDE.
@@ -320,9 +320,9 @@ void penDown() {
 }
 
 void right(uint8_t degrees) {
-  float radians = DEG_TO_RAD * degrees ;
-  float distance_right_wheel = radians * (half_track_width + pivot_point);
-  float distance_left_wheel = - radians * (half_track_width - pivot_point);
+  float radians = DEG_TO_RAD * (float)degrees ;
+  float distance_right_wheel = radians * (-half_track_width + pivot_point);
+  float distance_left_wheel = radians * (half_track_width + pivot_point);
   long steps_left = long (distance_left_wheel * steps_per_mil);
   long steps_right = long (distance_right_wheel * steps_per_mil);
 
@@ -335,9 +335,9 @@ void right(uint8_t degrees) {
 }
 
 void left(uint8_t degrees) {
-  float radians = DEG_TO_RAD * degrees ;
-  float distance_right_wheel = - radians * (half_track_width + pivot_point);
-  float distance_left_wheel = radians * (half_track_width - pivot_point);
+  float radians = DEG_TO_RAD * (float)degrees ;
+  float distance_right_wheel = radians * (half_track_width - pivot_point);
+  float distance_left_wheel = -radians * (half_track_width + pivot_point);
   long steps_left = long (distance_left_wheel * steps_per_mil);
   long steps_right = long (distance_right_wheel * steps_per_mil);
 
